@@ -21,7 +21,6 @@ const InputTags = ({ tags, setTags, tooltip, htmlId = 'tags' }: InputTagsProps) 
     }
   }, [tags]);
 
-  const tagInputRef = React.useRef<HTMLInputElement>(null);
   const tagInputRef = useRef<HTMLInputElement>(null);
 
   const removeTag = (i: number) => {
