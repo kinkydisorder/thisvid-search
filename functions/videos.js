@@ -141,7 +141,7 @@ exports.handler = async function (event, context) {
     });
 
     if (!quick) {
-      for (const video of urls) {
+      const promises = urls.map(async (video) => {
         try {
           const videoUrl = video.url;
           const response = await fetch(videoUrl);
@@ -149,7 +149,7 @@ exports.handler = async function (event, context) {
           const $ = cheerio.load(body);
 
           // Just add the video, tags will be filtered client-side
-          videos.push({
+          return {
             relevance: video.relevance,
             title: video.title,
             url: video.url,
@@ -160,11 +160,15 @@ exports.handler = async function (event, context) {
             views: video.views,
             date: video.date,
             page: video.page,
-          });
+          };
         } catch (error) {
-          console.log(error);
+          // Ignore individual video fetch errors to keep the list populated
+          return null;
         }
-      }
+      });
+
+      const results = await Promise.all(promises);
+      videos.push(...results.filter((v) => v !== null));
     }
 
     return {
