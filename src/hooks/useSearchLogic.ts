@@ -290,8 +290,7 @@ export const useSearchLogic = ({
           return {
             videos: s,
             page: currentPage,
-            // @ts-ignore
-            hasError: s && s.error === 404
+            hasError: s && (s as any).error === 404
           };
         }),
       );
@@ -312,8 +311,7 @@ export const useSearchLogic = ({
 
       // Extract videos
       const videos = results.flatMap(r => r.videos).filter(
-        // @ts-ignore
-        (value, index, self) => index === self.findIndex((v) => v.url === value.url),
+        (value: Video, index: number, self: Video[]) => index === self.findIndex((v: Video) => v.url === value.url),
       );
 
       const newRawVideos = preserveResults

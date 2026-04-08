@@ -20,8 +20,7 @@ const FriendsContainer = ({
         {friends
           .filter(({ username }) => username.toLowerCase().includes(filterUsername.toLowerCase()))
           .map(({ uid, username, avatar }) => (
-            // @ts-ignore
-            <LazyLoadComponent height={100} key={uid}>
+            <LazyLoadComponent key={uid}>
               <FriendResult
                 uid={uid}
                 username={username}

@@ -48,8 +48,7 @@ export const log = async ({
   if (error) {
     console.error(error);
   }
-  // @ts-ignore.
-  return data ? data[0] : null;
+  return data ? (data[0] as unknown as LogParams) : null;
 };
 
 export const updateLogResultCount = async (searchId: number, resultCount: number) => {

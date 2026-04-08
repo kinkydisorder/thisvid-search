@@ -15,8 +15,7 @@ const ResultsContainer = ({ videos = [] }: ResultsContainerProps) => {
     <div className="results-scroll-container">
       <div className="results">
         {videos.map((video: Video, index) => (
-          // @ts-ignore
-          <LazyLoadComponent height={150} key={index}>
+          <LazyLoadComponent key={index}>
             <Result
               title={video.title}
               url={video.url}

@@ -164,8 +164,7 @@ const Preferences = () => {
     }
 
     const videos = (await Promise.all(promises)).flat().filter(
-      // @ts-ignore
-      (value, index, self) => index === self.findIndex((v) => v.url === value.url),
+      (value: any, index: number, self: any[]) => index === self.findIndex((v: any) => v.url === value.url),
     );
 
     const videoUrls = videos.map((v) => v.url);
