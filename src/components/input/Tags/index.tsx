@@ -21,7 +21,7 @@ const InputTags = ({ tags, setTags, tooltip, htmlId = 'tags' }: InputTagsProps) 
     }
   }, [tags]);
 
-  let tagInput: HTMLInputElement | null = null;
+  const tagInputRef = React.useRef<HTMLInputElement>(null);
 
   const removeTag = (i: number) => {
     const newTags = [...tags];
@@ -34,8 +34,8 @@ const InputTags = ({ tags, setTags, tooltip, htmlId = 'tags' }: InputTagsProps) 
       return;
     }
     setTags([...tags, val]);
-    if (tagInput) {
-      tagInput.value = '';
+    if (tagInputRef.current) {
+      tagInputRef.current.value = '';
     }
     setInput('');
   };
@@ -79,9 +79,7 @@ const InputTags = ({ tags, setTags, tooltip, htmlId = 'tags' }: InputTagsProps) 
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Add tag..."
-          ref={(c) => {
-            tagInput = c;
-          }}
+          ref={tagInputRef}
           data-tooltip-id={`${htmlId}-tooltip`}
         />
         <Tooltip id={`${htmlId}-tooltip`} className="label-tooltip" place="left-start">
