@@ -45,11 +45,7 @@ export const SearchOptions: React.FC<SearchOptionsProps> = ({
             htmlFor="quick"
             className="checkbox-button"
             data-tooltip-id="quick"
-            onClick={() =>
-              alert(
-                'For the moment, Quick Search is always enabled to prevent fucking up and crashing ThisVid :p',
-              )
-            }
+
           >
             Quick Search
           </label>
