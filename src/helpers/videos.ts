@@ -140,7 +140,7 @@ export const filterVideos = ({
 };
 
 export const sortVideos = (videos: Array<Video> = [], sortMode: string): Array<Video> => {
-  const sortedVideos = videos;
+  const sortedVideos = [...videos];
   switch (sortMode) {
     default:
     case 'newest':
