@@ -167,7 +167,7 @@ exports.handler = async function (event, context) {
         try {
           const videoUrl = new URL(video.url, 'https://thisvid.com').href;
           const response = await fetch(videoUrl);
-          const body = await fetchResponse.text();
+          const body = await response.text();
           const $ = cheerio.load(body);
 
           // Just add the video, tags will be filtered client-side
