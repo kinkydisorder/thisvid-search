@@ -65,7 +65,7 @@ const Result = ({
             style={{ backgroundImage: `url(${imageSrc})` }}
             onClick={() => window.open(url, '_blank')}
           >
-            {(views || views !== 0) && (
+            {(views !== undefined && views !== null) && (
               <span className="info">
                 <svg xmlns="http://www.w3.org/2000/svg" width="90" height="50" viewBox="0 0 90 50">
                   <g id="Group_1" data-name="Group 1" transform="translate(-5 -25)">

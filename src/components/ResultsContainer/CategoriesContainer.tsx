@@ -14,8 +14,7 @@ const CategoriesContainer = ({ categories = [], setCategory }: CategoriesContain
       <div className="results">
         {categories.map(({ name, image, slug }) => {
           return (
-            // @ts-ignore
-            <LazyLoadComponent height={100} key={slug}>
+            <LazyLoadComponent key={slug}>
               <CategoryResult name={name} image={image} slug={slug} selectFunction={setCategory} />
             </LazyLoadComponent>
           );
