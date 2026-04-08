@@ -50,6 +50,10 @@ export const getVideos = async ({
       }),
     });
 
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
     const body: VideoResponse = await response.json();
 
     if (!body.success) {
