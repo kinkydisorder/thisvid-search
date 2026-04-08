@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Tooltip } from 'react-tooltip';
 
 import './style.css';
@@ -22,6 +22,7 @@ const InputTags = ({ tags, setTags, tooltip, htmlId = 'tags' }: InputTagsProps) 
   }, [tags]);
 
   const tagInputRef = React.useRef<HTMLInputElement>(null);
+  const tagInputRef = useRef<HTMLInputElement>(null);
 
   const removeTag = (i: number) => {
     const newTags = [...tags];

@@ -50,6 +50,10 @@ export const getVideos = async ({
       }),
     });
 
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
     const body: VideoResponse = await response.json();
 
     if (!body.success) {
@@ -62,6 +66,8 @@ export const getVideos = async ({
     return [];
   }
 };
+
+const escapeRegExp = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 export const filterVideos = ({
   videos,
@@ -82,6 +88,10 @@ export const filterVideos = ({
     if (!includeTagWeights) return 1;
     return tagWeightLookup.get(tag.toLowerCase()) ?? 1;
   };
+
+  const compiledIncludeTags = includeTags.map(tag => ({ tag, regex: new RegExp(escapeRegExp(tag), 'gi') }));
+  const compiledBoosterTags = boosterTags.map(tag => new RegExp(escapeRegExp(tag), 'gi'));
+  const compiledDiminishingTags = diminishingTags.map(tag => new RegExp(escapeRegExp(tag), 'gi'));
 
   return videos
     .filter(video => {
@@ -107,19 +117,16 @@ export const filterVideos = ({
     })
     .map(video => {
       // Calculate relevance score (each include-tag match weighted by optional favourite frequency)
-      const tagsRelevance = includeTags.reduce((score, tag) => {
-        const regex = new RegExp(tag, 'gi');
+      const tagsRelevance = compiledIncludeTags.reduce((score, { tag, regex }) => {
         const matches = (video.title.match(regex) || []).length;
         return score + matches * weightForIncludeTag(tag);
       }, 0);
 
-      const boosterRelevance = boosterTags.reduce((score, tag) => {
-        const regex = new RegExp(tag, 'gi');
+      const boosterRelevance = compiledBoosterTags.reduce((score, regex) => {
         return score + ((video.title.match(regex) || []).length > 0 ? 2 : 0);
       }, 0);
 
-      const diminishingRelevance = diminishingTags.reduce((score, tag) => {
-        const regex = new RegExp(tag, 'gi');
+      const diminishingRelevance = compiledDiminishingTags.reduce((score, regex) => {
         return score - ((video.title.match(regex) || []).length > 0 ? 2 : 0);
       }, 0);
 
@@ -133,7 +140,7 @@ export const filterVideos = ({
 };
 
 export const sortVideos = (videos: Array<Video> = [], sortMode: string): Array<Video> => {
-  const sortedVideos = videos;
+  const sortedVideos = [...videos];
   switch (sortMode) {
     default:
     case 'newest':

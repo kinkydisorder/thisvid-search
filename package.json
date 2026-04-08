@@ -4,7 +4,6 @@
   "private": true,
   "proxy": "http://localhost:3000",
   "dependencies": {
-    "@sparticuz/chromium": "^141.0.0",
     "@supabase/supabase-js": "^2.38.4",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
@@ -15,14 +14,10 @@
     "@types/react-dom": "^18.2.15",
     "@types/react-lazy-load-image-component": "^1.6.3",
     "axios": "^1.5.1",
-    "cheerio": "1.0.0-rc.10",
     "d3": "^7.8.5",
     "dotenv": "^16.3.1",
     "http-proxy-middleware": "^2.0.6",
     "node-fetch": "^2.6.7",
-    "puppeteer-core": "^21.4.1",
-    "puppeteer-extra": "^3.3.6",
-    "puppeteer-extra-plugin-adblocker": "^2.13.6",
     "react": "^18.2.0",
     "react-copy-to-clipboard": "^5.1.0",
     "react-dom": "^18.2.0",
@@ -66,6 +61,11 @@
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@trivago/prettier-plugin-sort-imports": "^4.2.1",
     "@types/d3": "^7.4.3",
-    "prettier": "^3.0.3"
+    "prettier": "^3.0.3",
+    "puppeteer-core": "^21.4.1",
+    "@sparticuz/chromium": "^141.0.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-adblocker": "^2.13.6",
+    "cheerio": "1.0.0-rc.10"
   }
 }

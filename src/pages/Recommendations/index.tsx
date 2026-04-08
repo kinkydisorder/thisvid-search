@@ -354,8 +354,7 @@ const Recommendations = () => {
                 )}
                 <div className="results">
                   {sortedRecommendationsList.map((video) => (
-                    // @ts-ignore
-                    <LazyLoadComponent height={150} key={video.url}>
+                    <LazyLoadComponent key={video.url}>
                       <Result
                         title={video.title}
                         url={video.url}

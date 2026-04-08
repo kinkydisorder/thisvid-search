@@ -37,16 +37,14 @@ export const CirclePacking = ({ data }: CirclePackingProps) => {
     canvas.height = container.clientHeight * dpi;
 
     // run d3-force to find the position of nodes on the canvas
-    d3.forceSimulation(nodes)
+    const simulation = d3.forceSimulation(nodes)
       .force(
         'collide',
-        // @ts-ignore
-        d3.forceCollide().radius((node) => sizeScale(node.value) + 1),
+        d3.forceCollide<Node>().radius((node) => sizeScale(node.value) + 1),
       )
       .force(
         'charge',
-        // @ts-ignore.
-        d3.forceManyBody().strength((node) => 80 * Math.sqrt(sizeScale(node.value))),
+        d3.forceManyBody<Node>().strength((node) => 80 * Math.sqrt(sizeScale(node.value))),
       )
       .force('center', d3.forceCenter(canvas.width / 2, canvas.height / 2))
       .force('charge', d3.forceY(0).strength(0.05))
@@ -66,6 +64,10 @@ export const CirclePacking = ({ data }: CirclePackingProps) => {
 
         drawCircles(context, canvas.width, canvas.height, nodes, sizeScale);
       });
+
+    return () => {
+      simulation.stop();
+    };
   }, [dpi, nodes, sizeScale]);
 
   return <canvas ref={canvasRef} />;
