@@ -34,6 +34,35 @@ const SimpleSearch = () => {
   const [isCompiling, setIsCompiling] = useState(false);
   const [compilationProgress, setCompilationProgress] = useState(0);
 
+  // Floating Analytics (Beta)
+  const [sessionDuration, setSessionDuration] = useState(0);
+  const [sessionUniqueUrls, setSessionUniqueUrls] = useState(new Set());
+  const [isWidgetOpen, setIsWidgetOpen] = useState(false);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSessionDuration(prev => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatDuration = (sec) => {
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    if (h > 0) return `${h}h ${m}m ${s}s`;
+    return `${m}m ${s}s`;
+  };
+
+  const trackDiscoveredVideos = (videos) => {
+    if (!videos || videos.length === 0) return;
+    setSessionUniqueUrls(prev => {
+      const next = new Set(prev);
+      videos.forEach(v => next.add(v.url));
+      return next;
+    });
+  };
+
   // Export Helpers
   const exportToJSON = () => {
     if (selectedVideos.length === 0) return;
@@ -132,7 +161,9 @@ const SimpleSearch = () => {
         const data = await response.json();
         if (data.videos && data.videos.length > 0) {
            // Prevent duplicates: filter out videos whose URL is already in allVideos
-           const newVideos = data.videos.filter(v => !allVideos.some(existing => existing.url === v.url));
+           trackDiscoveredVideos(data.videos);
+           const currentVideos = allVideos;
+           const newVideos = data.videos.filter(v => !currentVideos.some(existing => existing.url === v.url));
            allVideos = [...allVideos, ...newVideos];
            setResults([...allVideos]); // Update live
            setUnfilteredCount(allVideos.length);
@@ -234,6 +265,7 @@ const SimpleSearch = () => {
       if (data.success) {
         let recs = data.recommendedVideos || [];
         // Filtramos para que solo sean publicos y > 30s
+        trackDiscoveredVideos(recs);
         recs = recs.filter(v => !v.isPrivate && getDurationInSeconds(v.duration) >= 30);
 
         setExpandedVideo({
@@ -671,6 +703,7 @@ const SimpleSearch = () => {
                       const res = await fetch(`/.netlify/functions/videoDetails?url=${encodeURIComponent(v.url)}`);
                       const data = await res.json();
                       if (data.success && data.recommendedVideos) {
+                        trackDiscoveredVideos(data.recommendedVideos);
                         allRecs = [...allRecs, ...data.recommendedVideos];
                       }
                     } catch(e) {}
@@ -840,6 +873,90 @@ const SimpleSearch = () => {
           </div>
         )}
       </div>
+
+      {/* Floating Analytics Widget */}
+      <div style={{
+        position: 'fixed',
+        bottom: '20px',
+        right: '20px',
+        zIndex: 1000,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-end',
+        gap: '10px'
+      }}>
+        {isWidgetOpen && (
+          <div style={{
+            width: '300px',
+            backgroundColor: 'rgba(20, 20, 20, 0.95)',
+            border: '1px solid #d4af37',
+            borderRadius: '8px',
+            padding: '15px',
+            boxShadow: '0 0 15px rgba(212,175,55,0.3)',
+            color: '#f5deb3'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '1px solid rgba(212,175,55,0.3)', paddingBottom: '10px' }}>
+              <h3 style={{ margin: 0, fontSize: '16px' }}>📊 Telemetry Beta</h3>
+              <button onClick={() => setIsWidgetOpen(false)} style={{ background: 'none', border: 'none', color: '#ccc', cursor: 'pointer', fontSize: '16px' }}>✖</button>
+            </div>
+
+            <div style={{ marginBottom: '15px', fontSize: '14px', lineHeight: '1.6' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#aaa' }}>Duración Sesión:</span>
+                <span style={{ fontWeight: 'bold' }}>{formatDuration(sessionDuration)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#aaa' }}>Videos Únicos Vistos:</span>
+                <span style={{ fontWeight: 'bold' }}>{sessionUniqueUrls.size}</span>
+              </div>
+            </div>
+
+            {getCountedGlobalTags().length > 0 && (
+              <div>
+                <div style={{ fontSize: '12px', color: '#aaa', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>HyperScan Tag Cloud</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', maxHeight: '150px', overflowY: 'auto', paddingRight: '5px' }}>
+                  {getCountedGlobalTags().map(([tag, count]) => {
+                    // Scale font size based on count relative to others
+                    const maxCount = getCountedGlobalTags()[0][1];
+                    const minSize = 10;
+                    const maxSize = 20;
+                    const fontSize = Math.max(minSize, minSize + ((count / maxCount) * (maxSize - minSize)));
+                    return (
+                      <span key={tag} style={{
+                        fontSize: `${fontSize}px`,
+                        color: `rgba(245, 222, 179, ${0.4 + (count/maxCount)*0.6})`,
+                        transition: 'color 0.2s'
+                      }}>
+                        {tag}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {!isWidgetOpen && (
+          <button
+            onClick={() => setIsWidgetOpen(true)}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#d4af37',
+              color: '#111',
+              border: 'none',
+              borderRadius: '20px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
+              transition: 'transform 0.2s'
+            }}
+          >
+            📊 Analytics
+          </button>
+        )}
+      </div>
+
     </div>
   );
 };
