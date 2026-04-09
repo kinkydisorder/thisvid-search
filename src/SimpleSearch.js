@@ -23,6 +23,7 @@ const SimpleSearch = () => {
   // Selected videos (My Gallery)
   const [selectedVideos, setSelectedVideos] = useState([]);
   const [viewMode, setViewMode] = useState('search'); // 'search' | 'gallery'
+  const [activePlayerVideo, setActivePlayerVideo] = useState(null);
   const [globalTags, setGlobalTags] = useState([]);
 
   // Surprise AI Feature
@@ -291,6 +292,7 @@ const SimpleSearch = () => {
   };
 
   const displayedVideos = viewMode === 'search' ? getFilteredAndSortedVideos() : selectedVideos;
+  const inSidebar = activePlayerVideo !== null;
 
   // En base al tag seleccionado, si estamos en gallería y expandidos, filtramos los videos recomendados
   const getFilteredExpandedRecommendations = () => {
@@ -314,22 +316,88 @@ const SimpleSearch = () => {
     return [1, 2, 3, 4, 5].map(n => `${base}${n}.jpg`);
   };
 
-  const VideoCard = ({ video, isSelected }) => {
-    const [hoverIndex, setHoverIndex] = useState(0);
-    const [isHovering, setIsHovering] = useState(false);
-    const thumbs = getHoverThumbnails(video.avatar);
 
-    useEffect(() => {
-      let interval;
-      if (isHovering && thumbs.length > 1) {
-        interval = setInterval(() => {
-          setHoverIndex(prev => (prev + 1) % thumbs.length);
-        }, 800);
-      } else {
-        setHoverIndex(0);
+  // Player Component (Inline)
+  const renderPlayer = () => {
+    if (!activePlayerVideo) return null;
+
+    // Extract video ID from URL for embed (e.g. from 'videos/some-video-name/' to 'some-video-name' or id if numerical)
+    // Actually, thisvid uses numerical IDs for embed sometimes, or full path. Let's use the origin video page in an iframe since we don't have the exact embed API token, OR use the embed path.
+    // The embed format is typically https://thisvid.com/embed/12345/
+    // Since we don't always have the ID, we might need to rely on the URL path.
+    const urlParts = activePlayerVideo.url.split('/').filter(p => p);
+    // Usually url is like 'videos/12345/title-here/' or similar.
+
+    return (
+      <div style={{
+        flex: '0 0 75%',
+        position: 'sticky',
+        top: '20px',
+        height: 'calc(100vh - 40px)',
+        backgroundColor: '#000',
+        borderRadius: '8px',
+        overflow: 'hidden',
+        border: '2px solid #b71c1c',
+        display: 'flex',
+        flexDirection: 'column',
+        boxShadow: '0 0 20px rgba(0,0,0,0.8)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '15px', backgroundColor: 'rgba(183,28,28,0.9)', alignItems: 'center' }}>
+          <h2 style={{ margin: 0, color: '#f5deb3', fontSize: '18px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {activePlayerVideo.title}
+          </h2>
+          <button
+            onClick={() => setActivePlayerVideo(null)}
+            style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid #f5deb3', color: '#f5deb3', fontSize: '16px', cursor: 'pointer', fontWeight: 'bold', padding: '5px 10px', borderRadius: '4px' }}
+          >
+            Cerrar Player ✕
+          </button>
+        </div>
+        <div style={{ flex: 1, position: 'relative' }}>
+          <iframe
+            src={`https://thisvid.com/${activePlayerVideo.url.startsWith('videos') ? activePlayerVideo.url : 'videos/' + activePlayerVideo.url}`}
+            style={{ width: '100%', height: '100%', border: 'none' }}
+            allowFullScreen
+            title={activePlayerVideo.title}
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+          />
+        </div>
+      </div>
+    );
+  };
+
+  const VideoCard = ({ video, isSelected }) => {
+    const [isHovering, setIsHovering] = useState(false);
+    const videoRef = React.useRef(null);
+    const previewUrl = video.avatar ? video.avatar.replace(/\/[^\/]+\.jpg$/, '/preview.mp4') : null;
+
+    const handlePlayClick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setActivePlayerVideo(video);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleDownloadClick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      showToast('Iniciando descarga (Beta)...');
+      // A fallback download trigger for the exact preview/mp4
+      const a = document.createElement('a');
+      a.href = previewUrl;
+      a.target = '_blank';
+      a.download = video.title ? `${video.title}.mp4` : 'video.mp4';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    };
+
+    const handleScrub = (e) => {
+      if (videoRef.current && videoRef.current.duration) {
+        const percent = parseFloat(e.target.value) / 100;
+        videoRef.current.currentTime = percent * videoRef.current.duration;
       }
-      return () => clearInterval(interval);
-    }, [isHovering, thumbs.length]);
+    };
 
     return (
       <div style={{
@@ -339,59 +407,135 @@ const SimpleSearch = () => {
         backgroundColor: 'rgba(20,20,20,0.8)',
         boxShadow: isSelected ? '0 0 15px rgba(183,28,28,0.6)' : '0 4px 8px rgba(0,0,0,0.5)',
         transition: 'transform 0.2s',
-        position: 'relative'
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column'
       }}>
-        {/* Thumbnail Clickable Link */}
-        <a
-          href={`https://thisvid.com${video.url.startsWith('/') ? video.url : '/' + video.url}`}
-          target="_blank"
-          rel="noreferrer"
-          style={{ display: 'block', textDecoration: 'none' }}
+        {/* Thumbnail Area with Preview & Overlays */}
+        <div
+          style={{ position: 'relative', width: '100%', height: '180px', backgroundColor: '#000', cursor: 'pointer' }}
+          onMouseEnter={(e) => {
+            setIsHovering(true);
+            if (videoRef.current) {
+              videoRef.current.play().catch(e => console.log('Autoplay prevented', e));
+            }
+          }}
+          onMouseLeave={(e) => {
+            setIsHovering(false);
+            if (videoRef.current) {
+              videoRef.current.pause();
+              videoRef.current.currentTime = 0;
+            }
+          }}
+          onClick={handlePlayClick}
         >
-          <div
-            style={{ position: 'relative', width: '100%', height: '180px', backgroundColor: '#000', cursor: 'pointer' }}
-            onMouseEnter={() => setIsHovering(true)}
-            onMouseLeave={() => setIsHovering(false)}
-          >
+          {isHovering && previewUrl ? (
+            <video
+              ref={videoRef}
+              src={previewUrl}
+              muted
+              loop
+              playsInline
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+          ) : (
             <img
-              src={thumbs[hoverIndex]}
+              src={video.avatar}
               alt={video.title}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: isHovering ? 0.8 : 1, transition: 'opacity 0.2s' }}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               onError={(e) => { e.target.src = 'https://via.placeholder.com/250x180?text=No+Image' }}
             />
+          )}
 
+          {/* Scrubbing Slider Overlay */}
+          {isHovering && previewUrl && (
+            <input
+              type="range"
+              min="0" max="100" defaultValue="0"
+              onChange={handleScrub}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                position: 'absolute',
+                bottom: '0',
+                left: '0',
+                width: '100%',
+                margin: '0',
+                cursor: 'ew-resize',
+                opacity: 0.7,
+                height: '8px',
+                accentColor: '#b71c1c'
+              }}
+            />
+          )}
+
+          {/* Action Overlay */}
+          {isHovering && (
+            <div style={{
+              position: 'absolute',
+              top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: '10px'
+            }}>
+              <button
+                onClick={handlePlayClick}
+                style={{ background: '#b71c1c', color: 'white', border: 'none', borderRadius: '50%', width: '40px', height: '40px', cursor: 'pointer', fontWeight: 'bold' }}
+                title="Play Video"
+              >
+                ▶
+              </button>
+              <button
+                onClick={handleDownloadClick}
+                style={{ background: '#333', color: 'white', border: 'none', borderRadius: '50%', width: '40px', height: '40px', cursor: 'pointer', fontWeight: 'bold' }}
+                title="Download Preview MP4"
+              >
+                ↓
+              </button>
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleSelectVideo(video); }}
+                style={{ background: isSelected ? '#fff' : '#333', color: isSelected ? '#b71c1c' : 'white', border: 'none', borderRadius: '50%', width: '40px', height: '40px', cursor: 'pointer', fontWeight: 'bold' }}
+                title="Magic Save"
+              >
+                ⭐
+              </button>
+            </div>
+          )}
+
+          <span style={{
+            position: 'absolute',
+            bottom: isHovering ? '15px' : '5px',
+            right: '5px',
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            color: '#f5deb3',
+            padding: '2px 6px',
+            borderRadius: '4px',
+            fontSize: '12px',
+            pointerEvents: 'none'
+          }}>
+            {video.duration}
+          </span>
+          {video.isPrivate && (
             <span style={{
               position: 'absolute',
-              bottom: '5px',
-              right: '5px',
-              backgroundColor: 'rgba(0,0,0,0.8)',
-              color: '#f5deb3',
+              top: '5px',
+              left: '5px',
+              backgroundColor: 'rgba(183,28,28,0.9)',
+              color: '#fff',
               padding: '2px 6px',
               borderRadius: '4px',
-              fontSize: '12px'
+              fontSize: '12px',
+              fontWeight: 'bold',
+              pointerEvents: 'none'
             }}>
-              {video.duration}
+              PRIVADO
             </span>
-            {video.isPrivate && (
-              <span style={{
-                position: 'absolute',
-                top: '5px',
-                left: '5px',
-                backgroundColor: 'rgba(183,28,28,0.9)',
-                color: '#fff',
-                padding: '2px 6px',
-                borderRadius: '4px',
-                fontSize: '12px',
-                fontWeight: 'bold'
-              }}>
-                PRIVADO
-              </span>
-            )}
-          </div>
-        </a>
+          )}
+        </div>
 
         {/* Metadata */}
-        <div style={{ padding: '10px' }}>
+        <div style={{ padding: '10px', flex: 1, display: 'flex', flexDirection: 'column' }}>
           <h3 style={{ fontSize: '14px', margin: '0 0 10px 0', height: '40px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             <a href={`https://thisvid.com${video.url.startsWith('/') ? video.url : '/' + video.url}`} target="_blank" rel="noreferrer" style={{ color: '#f5deb3', textDecoration: 'none' }}>
               {video.title || 'Sin Título'}
@@ -399,29 +543,12 @@ const SimpleSearch = () => {
           </h3>
 
           <div style={{ fontSize: '12px', color: '#aaa', display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <span>👁️ {video.views ? video.views.toLocaleString() : 0} vistas</span>
+            <span>👁️ {video.views !== undefined && video.views !== null ? video.views.toLocaleString() : 0} vistas</span>
             <span>📅 {video.date || 'Desconocido'}</span>
           </div>
 
-          {/* Actions */}
-          <div style={{ display: 'flex', gap: '5px', flexDirection: 'column' }}>
-            <button
-              onClick={(e) => { e.preventDefault(); toggleSelectVideo(video); }}
-              style={{
-                width: '100%',
-                padding: '8px',
-                backgroundColor: isSelected ? 'rgba(255,255,255,0.1)' : '#b71c1c',
-                color: '#f5deb3',
-                border: isSelected ? '1px solid #b71c1c' : 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontWeight: 'bold',
-                transition: 'background-color 0.2s'
-              }}
-            >
-              {isSelected ? '❌ Quitar de Galería' : '⭐ Añadir a Galería'}
-            </button>
-
+          {/* Quick Actions at bottom */}
+          <div style={{ marginTop: 'auto', display: 'flex', gap: '5px', flexDirection: 'column' }}>
             {viewMode === 'gallery' && (
               <button
                 onClick={(e) => { e.preventDefault(); fetchRecommendations(video.url); }}
@@ -433,7 +560,6 @@ const SimpleSearch = () => {
                   border: 'none',
                   borderRadius: '4px',
                   cursor: 'pointer',
-                  marginTop: '5px',
                   fontWeight: 'bold'
                 }}
               >
@@ -762,7 +888,7 @@ const SimpleSearch = () => {
               <h4 style={{ color: '#d4af37' }}>🎬 Resultados de la Mente Colmena:</h4>
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                gridTemplateColumns: `repeat(auto-fill, minmax(${inSidebar ? '120px' : '200px'}, 1fr))`,
                 gap: '15px'
               }}>
                 {smartRecommendations.map((recVideo) => (
@@ -810,24 +936,35 @@ const SimpleSearch = () => {
         </div>
       )}
 
-      {/* Grid rendering selected or searched videos */}
+      {/* Player and Grid rendering selected or searched videos */}
       <div style={{
         display: 'flex',
-        flexDirection: 'column',
-        gap: '20px'
+        flexDirection: inSidebar ? 'row' : 'column',
+        gap: '20px',
+        alignItems: 'flex-start'
       }}>
+
+        {renderPlayer()}
+
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+          flex: inSidebar ? '0 0 calc(25% - 20px)' : '1',
+          display: 'flex',
+          flexDirection: 'column',
           gap: '20px'
         }}>
-          {displayedVideos.map((video) => (
-            <VideoCard
-              key={video.url}
-              video={video}
-              isSelected={selectedVideos.some(v => v.url === video.url)}
-            />
-          ))}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(auto-fill, minmax(${inSidebar ? '120px' : '250px'}, 1fr))`,
+            gap: '20px'
+          }}>
+            {displayedVideos.map((video) => (
+              <VideoCard
+                key={video.url}
+                video={video}
+                isSelected={selectedVideos.some(v => v.url === video.url)}
+              />
+            ))}
+          </div>
         </div>
 
         {/* Expanded view for recommended videos in Gallery mode */}
@@ -856,7 +993,7 @@ const SimpleSearch = () => {
             ) : getFilteredExpandedRecommendations().length > 0 ? (
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                gridTemplateColumns: `repeat(auto-fill, minmax(${inSidebar ? '120px' : '200px'}, 1fr))`,
                 gap: '15px'
               }}>
                 {getFilteredExpandedRecommendations().map((recVideo) => (
