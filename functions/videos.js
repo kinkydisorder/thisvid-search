@@ -77,9 +77,9 @@ exports.handler = async function (event, context) {
       };
     }
 
-    const response = await fetch(fetchUrl.href);
+    const fetchResponse = await fetch(fetchUrl.href);
 
-    if (response.status === 404) {
+    if (fetchResponse.status === 404) {
       return {
         statusCode: 400,
         body: JSON.stringify({
@@ -91,7 +91,7 @@ exports.handler = async function (event, context) {
       };
     }
 
-    const body = await response.text();
+    const body = await fetchResponse.text();
     const $ = cheerio.load(body);
 
     const videos = [];
