@@ -1,0 +1,5 @@
+🔒 Fix SSRF vulnerability in functions/videos.js
+
+🎯 What: Fixed a Server-Side Request Forgery (SSRF) vulnerability when parsing external URLs.
+⚠️ Risk: The codebase constructed a URL from `video.url` using `new URL(video.url, 'https://thisvid.com').href` on line 168. An attacker could supply `//evil.com` to bypass the relative path append and make the application execute requests against arbitrary external hosts.
+🛡️ Solution: Validated that the hostname of the parsed URL strictly matches `thisvid.com` or `www.thisvid.com` before initiating the fetch.
