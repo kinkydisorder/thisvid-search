@@ -820,19 +820,29 @@ const SimpleSearch = () => {
                   // 2. Gather top 3 tags from global pool or generic
                   const sortedTags = getCountedGlobalTags().slice(0, 3).map(t => t[0]);
 
-                  // 3. Fetch recommendations for top 2 selected videos to avoid hammering the server
+                  // 3. Fetch recommendations for top videos in parallel to avoid sequential blocking
                   let allRecs = [];
                   const videosToScan = selectedVideos.slice(0, 3);
 
-                  for (let v of videosToScan) {
-                    try {
-                      const res = await fetch(`/.netlify/functions/videoDetails?url=${encodeURIComponent(v.url)}`);
-                      const data = await res.json();
-                      if (data.success && data.recommendedVideos) {
-                        trackDiscoveredVideos(data.recommendedVideos);
-                        allRecs = [...allRecs, ...data.recommendedVideos];
-                      }
-                    } catch(e) {}
+                  try {
+                    const results = await Promise.all(
+                      videosToScan.map(async (v) => {
+                        try {
+                          const res = await fetch(`/.netlify/functions/videoDetails?url=${encodeURIComponent(v.url)}`);
+                          const data = await res.json();
+                          if (data.success && data.recommendedVideos) {
+                            trackDiscoveredVideos(data.recommendedVideos);
+                            return data.recommendedVideos;
+                          }
+                        } catch (e) {
+                          console.error(`Error fetching details for ${v.url}:`, e);
+                        }
+                        return [];
+                      })
+                    );
+                    allRecs = results.flat();
+                  } catch (e) {
+                    console.error("Error in parallel fetch:", e);
                   }
 
                   // 4. Apply AI heuristics to filter the raw recommendations
