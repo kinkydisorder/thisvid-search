@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import cheerio from 'cheerio';
-import { Video } from '../helpers/types';
+import { Video, Friend, FriendsEventVideo, LogParams } from '../helpers/types';
 import { getVideos } from '../helpers/videos';
 import { getFriends } from '../helpers/friends';
 import { getUsername } from '../helpers/users';
@@ -30,8 +30,8 @@ interface UseSearchLogicProps {
   setAmount: (amount: number) => void;
   setSourceExists: (exists: boolean) => void;
   setUsername: (username: string) => void;
-  setFriends: (friends: any[]) => void;
-  setSearchObject: (obj: any) => void;
+  setFriends: (friends: Friend[]) => void;
+  setSearchObject: (obj: LogParams | null) => void;
   executeScroll: () => void;
 }
 
@@ -235,7 +235,7 @@ export const useSearchLogic = ({
         }
 
         // Map friendsEvents videos to Search Video format
-        const mappedVideos: Video[] = (data.videos || []).map((video: any, index: number) => ({
+        const mappedVideos: Video[] = (data.videos || []).map((video: FriendsEventVideo) => ({
           title: video.title,
           url: video.url,
           isPrivate: false,
@@ -290,7 +290,7 @@ export const useSearchLogic = ({
           return {
             videos: s,
             page: currentPage,
-            hasError: s && (s as any).error === 404
+            hasError: s && (s as any).hasOwnProperty('error') && (s as any).error === 404
           };
         }),
       );

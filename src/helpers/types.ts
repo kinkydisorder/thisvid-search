@@ -44,6 +44,13 @@ export type FriendsResponse = {
   friends: Friend[];
 };
 
+export type FriendsEventVideo = {
+  uploader: string;
+  title: string;
+  thumbnail: string;
+  url: string;
+};
+
 export type LogParams = {
   id: number;
   mode: string;
