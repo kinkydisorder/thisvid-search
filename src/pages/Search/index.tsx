@@ -19,7 +19,7 @@ import { useVideoFiltering } from '../../hooks/useVideoFiltering';
 import { useSearchLogic } from '../../hooks/useSearchLogic';
 
 import { getCategories } from '../../helpers/getCategories';
-import { Modes, Types, Video } from '../../helpers/types';
+import { Modes, Types, Video, FriendsEventVideo } from '../../helpers/types';
 
 const modes: Modes = {
   newest: 'Newest videos',
@@ -74,7 +74,7 @@ const Search = () => {
   const executeScroll = () => resultsRef.current?.scrollIntoView();
 
   // Enrich videos with tags, category, and thumbnail
-  const enrichVideos = async (friendsEventsVideos: any[], mappedVideos: Video[]) => {
+  const enrichVideos = async (friendsEventsVideos: FriendsEventVideo[], mappedVideos: Video[]) => {
     searchState.setEnriching(true);
     searchState.setEnrichmentProgress(0);
 
@@ -136,8 +136,8 @@ const Search = () => {
       const stored = localStorage.getItem('tvass-whats-new-videos');
       if (stored) {
         try {
-          const parsedVideos = JSON.parse(stored);
-          const mappedVideos: Video[] = parsedVideos.map((video: any) => ({
+          const parsedVideos: FriendsEventVideo[] = JSON.parse(stored);
+          const mappedVideos: Video[] = parsedVideos.map((video) => ({
             title: video.title,
             url: video.url,
             isPrivate: false,
