@@ -165,7 +165,11 @@ exports.handler = async function (event, context) {
     if (!quick) {
       const promises = urls.map(async (video) => {
         try {
-          const videoUrl = new URL(video.url, 'https://thisvid.com').href;
+          const parsedVideoUrl = new URL(video.url, 'https://thisvid.com');
+          if (parsedVideoUrl.hostname !== 'thisvid.com' && parsedVideoUrl.hostname !== 'www.thisvid.com') {
+            throw new Error('Invalid hostname');
+          }
+          const videoUrl = parsedVideoUrl.href;
           const response = await fetch(videoUrl);
           const body = await response.text();
           const $ = cheerio.load(body);
