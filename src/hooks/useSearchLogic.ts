@@ -323,7 +323,7 @@ export const useSearchLogic = ({
       executeScroll();
       logSearch();
     } catch (error) {
-      console.log('Error: ' + error);
+      console.error('Error:', error);
     }
 
     setLoading(false);
