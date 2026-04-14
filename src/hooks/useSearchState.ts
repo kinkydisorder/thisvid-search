@@ -4,7 +4,7 @@ import { Video, Friend, Category, Mood, LogParams } from '../helpers/types';
 
 export const useSearchState = () => {
   const [searchParams] = useSearchParams();
-  const params: { [key: string]: any } = {};
+  const params: Record<string, string> = {};
 
   searchParams.forEach((value, key) => {
     params[key] = value;
@@ -20,8 +20,8 @@ export const useSearchState = () => {
   const [friendId, setFriendId] = useState(params.friendId || '');
 
   // Pagination and limits
-  const [start, setStart] = useState(params.start || 1);
-  const [amount, setAmount] = useState(params.amount || 30);
+  const [start, setStart] = useState<number>(params.start ? parseInt(params.start, 10) : 1);
+  const [amount, setAmount] = useState<number>(params.amount ? parseInt(params.amount, 10) : 30);
   const [pageLimit, setPageLimit] = useState(0);
 
   // UI state
