@@ -8,7 +8,7 @@ interface UserIdInputProps {
   setId: (id: string) => void;
   username: string;
   friendId: string;
-  setFriendId: (friendId: string | null) => void;
+  setFriendId: (friendId: string) => void;
   friends: Friend[];
   friendIdFieldHover: boolean;
   setFriendIdFieldHover: (hover: boolean) => void;
@@ -88,7 +88,7 @@ export const UserIdInput: React.FC<UserIdInputProps> = ({
               id="friendId"
               placeholder="Choose friend"
               value={friendIdFieldHover ? 'Change friend' : friendId || ''}
-              onClick={() => setFriendId(null)}
+              onClick={() => setFriendId('')}
               onMouseEnter={() => setFriendIdFieldHover(true)}
               onMouseLeave={() => setFriendIdFieldHover(false)}
               style={{ cursor: 'pointer' }}
