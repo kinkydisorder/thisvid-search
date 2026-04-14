@@ -1,4 +1,6 @@
 export type Video = {
+  category?: string;
+  tags?: string[];
   title: string;
   url: string;
   isPrivate: boolean;
