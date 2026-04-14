@@ -74,7 +74,7 @@ const Search = () => {
   const executeScroll = () => resultsRef.current?.scrollIntoView();
 
   // Enrich videos with tags, category, and thumbnail
-  const enrichVideos = async (friendsEventsVideos: FriendsEventVideo[], mappedVideos: Video[]) => {
+  const enrichVideos = async (friendsEventsVideos: (Video | any)[], mappedVideos: Video[]) => {    
     searchState.setEnriching(true);
     searchState.setEnrichmentProgress(0);
 
