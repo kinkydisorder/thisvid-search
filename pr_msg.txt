@@ -1,5 +1,12 @@
-🔒 Fix SSRF vulnerability in functions/videos.js
+🧪 Add tests for getFriends helper
 
-🎯 What: Fixed a Server-Side Request Forgery (SSRF) vulnerability when parsing external URLs.
-⚠️ Risk: The codebase constructed a URL from `video.url` using `new URL(video.url, 'https://thisvid.com').href` on line 168. An attacker could supply a URL scheme or malicious domain (e.g. `//evil.com`) to bypass the relative path append, coercing the backend into executing arbitrary external HTTP requests against potentially private infrastructure.
-🛡️ Solution: Validated that the `hostname` of the explicitly parsed URL strictly matches either `thisvid.com` or `www.thisvid.com` before initiating the fetch. If it does not, an error is safely thrown and the rogue URL request is prevented.
+🎯 What: The testing gap addressed
+The `getFriends` helper function in `src/helpers/friends.ts` was missing test coverage. This function handles fetching friends data and updates progress and total pages based on the response.
+
+📊 Coverage: What scenarios are now tested
+1. **Error Handling (Non-200 Status):** Tests that when the fetch response status is not 200, it returns a default failure object without calling the setter functions.
+2. **Error Handling (Success is false):** Tests that when the response is 200 but the JSON payload has `success: false`, it safely calls setters with 0 and returns a default failure object.
+3. **Happy Path (Success is true):** Tests that when the response is 200 and the JSON payload is successful, it accurately updates the total pages and progress using the setter functions and returns the friends response.
+
+✨ Result: The improvement in test coverage
+We now have reliable test coverage for `getFriends`, validating both success and error behaviors using Jest's mocking of the global fetch function.
