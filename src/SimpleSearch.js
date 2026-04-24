@@ -435,7 +435,7 @@ const SimpleSearch = () => {
             onMouseEnter={() => {
                 setIsHovering(true);
                 if(videoRef.current) {
-                    videoRef.current.play().catch(e => console.log('Autoplay prevented', e));
+                    videoRef.current.play().catch(() => {});
                 }
             }}
             onMouseLeave={() => {
