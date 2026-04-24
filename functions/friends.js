@@ -21,6 +21,17 @@ exports.handler = async function (event, context) {
     };
   }
 
+  if (!/^[a-zA-Z0-9_-]+$/.test(userId)) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({
+        status: 'Bad Request',
+        message: 'Invalid userId format',
+        success: false,
+      }),
+    };
+  }
+
   const response = await fetch(`https://thisvid.com/members/${userId}/friends/`);
 
   if (response.status === 404) {
