@@ -146,7 +146,7 @@ exports.handler = async function (event, context) {
       statusCode: 500,
       body: JSON.stringify({
         status: 'Internal Server Error',
-        message: error.message || 'An error occurred while fetching video details',
+        message: 'An error occurred while fetching video details',
         success: false,
       }),
       headers,
