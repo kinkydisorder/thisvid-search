@@ -193,7 +193,7 @@ exports.handler = async function (event, context) {
       statusCode: 500,
       body: JSON.stringify({
         status: 'Internal Server Error',
-        message: error.message || 'An error occurred while fetching friends events',
+        message: 'An error occurred while fetching friends events',
         success: false,
       }),
       headers,

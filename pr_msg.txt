@@ -1,5 +1,5 @@
-🔒 Fix SSRF vulnerability in functions/videos.js
+🧪 Add tests for getCategories
 
-🎯 What: Fixed a Server-Side Request Forgery (SSRF) vulnerability when parsing external URLs.
-⚠️ Risk: The codebase constructed a URL from `video.url` using `new URL(video.url, 'https://thisvid.com').href` on line 168. An attacker could supply a URL scheme or malicious domain (e.g. `//evil.com`) to bypass the relative path append, coercing the backend into executing arbitrary external HTTP requests against potentially private infrastructure.
-🛡️ Solution: Validated that the `hostname` of the explicitly parsed URL strictly matches either `thisvid.com` or `www.thisvid.com` before initiating the fetch. If it does not, an error is safely thrown and the rogue URL request is prevented.
+🎯 What: The testing gap for the getCategories API call has been addressed by writing unit tests for `getCategories.ts`.
+📊 Coverage: Added tests to cover the successful parsing of HTML returning straight and gay categories. Included test cases for edge cases such as missing attributes (e.g., missing span or image elements) and graceful error handling when fetch throws an error.
+✨ Result: The test suite now mocks the global fetch API properly. This leads to increased test coverage and more confidence when refactoring in the future.

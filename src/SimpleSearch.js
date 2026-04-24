@@ -435,7 +435,7 @@ const SimpleSearch = () => {
             onMouseEnter={() => {
                 setIsHovering(true);
                 if(videoRef.current) {
-                    videoRef.current.play().catch(e => console.log('Autoplay prevented', e));
+                    videoRef.current.play().catch(() => {});
                 }
             }}
             onMouseLeave={() => {
@@ -859,7 +859,12 @@ const SimpleSearch = () => {
                   });
 
                   // Remove duplicates
-                  const uniqueRecs = filteredRecs.filter((v, i, a) => a.findIndex(t => (t.url === v.url)) === i);
+                  const seenUrls = new Set();
+                  const uniqueRecs = filteredRecs.filter((v) => {
+                    if (seenUrls.has(v.url)) return false;
+                    seenUrls.add(v.url);
+                    return true;
+                  });
 
                   setSmartRecommendations(uniqueRecs);
 
