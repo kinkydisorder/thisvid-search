@@ -859,7 +859,12 @@ const SimpleSearch = () => {
                   });
 
                   // Remove duplicates
-                  const uniqueRecs = filteredRecs.filter((v, i, a) => a.findIndex(t => (t.url === v.url)) === i);
+                  const seenUrls = new Set();
+                  const uniqueRecs = filteredRecs.filter((v) => {
+                    if (seenUrls.has(v.url)) return false;
+                    seenUrls.add(v.url);
+                    return true;
+                  });
 
                   setSmartRecommendations(uniqueRecs);
 
