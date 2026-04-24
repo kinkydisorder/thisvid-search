@@ -1,6 +1,7 @@
-Title: 🧪 Add tests for analyseFavourites storage keys
+Title: 🧹 [Code Health] Remove console.error from useSearchLogic catch block
 
 Description:
-🎯 **What:** Added missing unit tests for the storage keys defined in `src/helpers/analyseFavourites.ts`.
-📊 **Coverage:** Covered the export constants `TVASS_USER_ID_STORAGE_KEY` and `ANALYSE_USERS_STORAGE_KEY` to ensure they have the exact string values expected by the application for local storage.
-✨ **Result:** Enhanced test coverage for the constants, preventing accidental regressions if the storage keys are modified. Tests are executing successfully and deterministic.
+🎯 **What:** Removed a `console.error` statement inside a `catch` block in `src/hooks/useSearchLogic.ts`. Also updated the block to `catch { ... }` (omitting the bound `error` variable) to prevent unused variable linting errors.
+💡 **Why:** `console.error` logs can clutter the user's browser console, especially in cases where expected errors (like 404s or network timeouts) happen and are already handled functionally. We also use a more precise error boundary now by ignoring the search exception instead of printing standard output to the end-user.
+✅ **Verification:** Verified changes through testing. Ran `npx tsc --noEmit` and `npm run test -- --watchAll=false` which proved the typescript builds pass cleanly with 0 type errors, and all tests pass cleanly.
+✨ **Result:** A cleaner console for users and an improvement to the application's overall code health without mutating functional behavior.
