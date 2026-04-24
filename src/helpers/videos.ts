@@ -92,21 +92,23 @@ export const filterVideos = ({
   const compiledIncludeTags = includeTags.map(tag => ({ tag, regex: new RegExp(escapeRegExp(tag), 'gi') }));
   const compiledBoosterTags = boosterTags.map(tag => new RegExp(escapeRegExp(tag), 'gi'));
   const compiledDiminishingTags = diminishingTags.map(tag => new RegExp(escapeRegExp(tag), 'gi'));
+  const lowerExcludeTags = excludeTags.map(tag => tag.toLowerCase());
+  const lowerIncludeTags = includeTags.map(tag => tag.toLowerCase());
 
   return videos
     .filter(video => {
       const title = video.title.toLowerCase();
 
       // Skip if video title contains any of the exclude tags
-      if (excludeTags.some(tag => title.includes(tag.toLowerCase()))) {
+      if (lowerExcludeTags.some(tag => title.includes(tag))) {
         return false;
       }
 
       // Check if video matches include tags criteria
-      if (includeTags.length > 0) {
+      if (lowerIncludeTags.length > 0) {
         const hasAllTags = termsOperator === 'AND'
-          ? includeTags.every(tag => title.includes(tag.toLowerCase()))
-          : includeTags.some(tag => title.includes(tag.toLowerCase()));
+          ? lowerIncludeTags.every(tag => title.includes(tag))
+          : lowerIncludeTags.some(tag => title.includes(tag));
 
         if (!hasAllTags) {
           return false;
