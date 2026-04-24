@@ -15,7 +15,7 @@ interface SearchFiltersProps {
   termsOperator: 'AND' | 'OR';
   setTermsOperator: (operator: 'AND' | 'OR') => void;
   minDuration: number;
-  setMinDuration: (duration: number | null) => void;
+  setMinDuration: (duration: number) => void;
   start: number;
   setStart: (start: number) => void;
   amount: number;
@@ -139,7 +139,7 @@ export const SearchFilters: React.FC<SearchFiltersProps> = ({
           min="0"
           id="min-duration"
           value={minDuration}
-          onChange={(e) => setMinDuration(parseInt(e.target.value) || null)}
+          onChange={(e) => setMinDuration(parseInt(e.target.value) || 0)}
         />
         <label htmlFor="amount">Number of Pages</label>
         <div style={{ position: 'relative' }}>
