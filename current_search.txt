@@ -136,14 +136,15 @@ const SimpleSearch = () => {
     let allVideos = [];
 
     try {
-      setProgressMsg(`Iniciando extracción de ${pagesToScrape} páginas en paralelo...`);
-
-      const fetchPromises = [];
       for (let i = 1; i <= pagesToScrape; i++) {
+        setProgressMsg(`Extrayendo página ${i} de ${pagesToScrape}...`);
+
         let url = `/.netlify/functions/videos?page=${i}`;
 
         if (category) {
+          // If a category is selected, we scrape the category page directly
           url += `&url=${encodeURIComponent(`/categories/${category}/latest/${i}/`)}`;
+          // If there is also a text query, append it to let the backend mix them
           if (query.trim()) {
             url += `&search=${encodeURIComponent(query)}`;
           }
@@ -151,36 +152,27 @@ const SimpleSearch = () => {
           url += `&search=${encodeURIComponent(query)}`;
         }
 
-        const promise = fetch(url).then(async (response) => {
-          if (!response.ok) {
-            console.warn(`Error on page ${i}`);
-            return null;
-          }
-          return response.json();
-        }).catch(err => {
-          console.warn(`Fetch error on page ${i}:`, err);
-          return null;
-        });
+        const response = await fetch(url);
 
-        fetchPromises.push(promise);
-      }
+        if (!response.ok) {
+          console.warn(`Error on page ${i}`);
+          break;
+        }
 
-      const resultsArray = await Promise.all(fetchPromises);
-
-      for (const data of resultsArray) {
-        if (data && data.videos && data.videos.length > 0) {
-          trackDiscoveredVideos(data.videos);
-          // using functional update approach for thread-safety to avoid losing items,
-          // but we can just accumulate here safely since this is sequential after the await.
-          // However, allVideos needs to be updated progressively
-          // eslint-disable-next-line no-loop-func
-          const newVideos = data.videos.filter(v => !allVideos.some(existing => existing.url === v.url));
-          allVideos = [...allVideos, ...newVideos];
+        const data = await response.json();
+        if (data.videos && data.videos.length > 0) {
+           // Prevent duplicates: filter out videos whose URL is already in allVideos
+           trackDiscoveredVideos(data.videos);
+           const currentVideos = allVideos;
+           const newVideos = data.videos.filter(v => !currentVideos.some(existing => existing.url === v.url));
+           allVideos = [...allVideos, ...newVideos];
+           setResults([...allVideos]); // Update live
+           setUnfilteredCount(allVideos.length);
+        } else {
+          // No more results
+          break;
         }
       }
-
-      setResults(allVideos);
-      setUnfilteredCount(allVideos.length);
       setProgressMsg(`Completado: ${allVideos.length} videos extraídos.`);
     } catch (err) {
       setError(err.message);
@@ -378,7 +370,7 @@ const SimpleSearch = () => {
     const [hoverIndex, setHoverIndex] = useState(0);
     const [isHovering, setIsHovering] = useState(false);
     const thumbs = getHoverThumbnails(video.avatar);
-    
+
     const previewUrl = `https://media.thisvid.com/preview/${video.url.split('/').filter(Boolean).pop()}.mp4`;
     const videoRef = React.useRef(null);
     const [duration, setDuration] = useState(0);
@@ -412,7 +404,7 @@ const SimpleSearch = () => {
         videoRef.current.currentTime = pct * duration;
       }
     };
-    
+
     const handlePlayClick = (e) => {
       e.stopPropagation();
       e.preventDefault();
@@ -443,7 +435,7 @@ const SimpleSearch = () => {
             onMouseEnter={() => {
                 setIsHovering(true);
                 if(videoRef.current) {
-                    videoRef.current.play().catch(() => {});
+                    videoRef.current.play().catch(e => console.log('Autoplay prevented', e));
                 }
             }}
             onMouseLeave={() => {
@@ -472,7 +464,7 @@ const SimpleSearch = () => {
                   onError={(e) => { e.target.src = 'https://via.placeholder.com/250x180?text=No+Image' }}
                 />
             )}
-            
+
             {/* Scrubber Bar Overlay */}
             {isHovering && previewUrl && (
                 <input
@@ -483,7 +475,7 @@ const SimpleSearch = () => {
                   style={{ position: 'absolute', bottom: '0', left: '0', width: '100%', margin: '0', cursor: 'ew-resize', opacity: 0.7, height: '8px', zIndex: 5 }}
                 />
             )}
-            
+
             {!previewUrl && isHovering && thumbs.length > 1 && (
                 <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '4px', backgroundColor: 'rgba(255,255,255,0.3)', pointerEvents: 'none', zIndex: 5 }}>
                     <div style={{ width: `${((hoverIndex + 1) / thumbs.length) * 100}%`, height: '100%', backgroundColor: '#d4af37', transition: 'width 0.2s linear' }} />
@@ -538,10 +530,10 @@ const SimpleSearch = () => {
           {/* Actions */}
           <div style={{ display: 'flex', gap: '5px', flexDirection: 'column', marginTop: 'auto' }}>
             <button
-              onClick={(e) => { 
-                e.preventDefault(); 
+              onClick={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
-                toggleSelectVideo(video); 
+                toggleSelectVideo(video);
               }}
               style={{
                 width: '100%',
@@ -562,10 +554,10 @@ const SimpleSearch = () => {
 
             {viewMode === 'gallery' && (
               <button
-                onClick={(e) => { 
-                  e.preventDefault(); 
+                onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
-                  fetchRecommendations(video.url); 
+                  fetchRecommendations(video.url);
                 }}
                 style={{
                   width: '100%',
@@ -867,12 +859,7 @@ const SimpleSearch = () => {
                   });
 
                   // Remove duplicates
-                  const seenUrls = new Set();
-                  const uniqueRecs = filteredRecs.filter((v) => {
-                    if (seenUrls.has(v.url)) return false;
-                    seenUrls.add(v.url);
-                    return true;
-                  });
+                  const uniqueRecs = filteredRecs.filter((v, i, a) => a.findIndex(t => (t.url === v.url)) === i);
 
                   setSmartRecommendations(uniqueRecs);
 
