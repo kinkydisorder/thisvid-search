@@ -1,4 +1,5 @@
-import { getVideos, parseRelativeTime } from './videos';
+import { getVideos, parseRelativeTime, sortVideos } from './videos';
+import { Video } from './types';
 
 describe('getVideos', () => {
   let originalFetch: typeof global.fetch;
@@ -140,5 +141,117 @@ describe('parseRelativeTime', () => {
 
     expect(parseRelativeTime('xyz')).toEqual(anchor);
     expect(parseRelativeTime('5 blablas')).toEqual(anchor);
+  });
+});
+
+
+describe('sortVideos', () => {
+  const createMockVideo = (overrides: Partial<Video>): Video => ({
+    title: 'Test',
+    url: '/test',
+    isPrivate: false,
+    duration: '00:00',
+    avatar: 'avatar.jpg',
+    views: 0,
+    date: 'today',
+    relevance: 0,
+    page: 1,
+    ...overrides,
+  });
+
+  const baseDate = new Date('2023-01-15T12:00:00.000Z');
+
+  beforeAll(() => {
+    jest.useFakeTimers();
+    jest.setSystemTime(baseDate);
+  });
+
+  afterAll(() => {
+    jest.useRealTimers();
+  });
+
+  it('should handle undefined and empty array', () => {
+    expect(sortVideos(undefined, 'newest')).toEqual([]);
+    expect(sortVideos([], 'newest')).toEqual([]);
+  });
+
+  it('should not mutate the original array', () => {
+    const arr = [createMockVideo({ title: 'A' }), createMockVideo({ title: 'B' })];
+    const clone = [...arr];
+    sortVideos(arr, 'views');
+    expect(arr).toEqual(clone);
+  });
+
+  it('should sort by newest (date descending) with views fallback', () => {
+    const v1 = createMockVideo({ date: '2 days ago', views: 100 }); // newer
+    const v2 = createMockVideo({ date: '5 days ago', views: 500 }); // older
+    const v3 = createMockVideo({ date: '5 days ago', views: 1000 }); // older but more views
+
+    const result = sortVideos([v2, v1, v3], 'newest');
+    expect(result).toEqual([v1, v3, v2]);
+  });
+
+  it('should sort by oldest (date ascending) with views fallback', () => {
+    const v1 = createMockVideo({ date: '5 days ago', views: 1000 }); // older, more views
+    const v2 = createMockVideo({ date: '5 days ago', views: 500 }); // older
+    const v3 = createMockVideo({ date: '2 days ago', views: 100 }); // newer
+
+    const result = sortVideos([v3, v2, v1], 'oldest');
+    expect(result).toEqual([v1, v2, v3]);
+  });
+
+  it('should sort by longest (duration descending)', () => {
+    const v1 = createMockVideo({ duration: '12:30' });
+    const v2 = createMockVideo({ duration: '5:00' });
+    const v3 = createMockVideo({ duration: '45:15' });
+
+    const result = sortVideos([v1, v2, v3], 'longest');
+    expect(result).toEqual([v3, v1, v2]);
+  });
+
+  it('should sort by shortest (duration ascending)', () => {
+    const v1 = createMockVideo({ duration: '12:30' });
+    const v2 = createMockVideo({ duration: '5:00' });
+    const v3 = createMockVideo({ duration: '45:15' });
+
+    const result = sortVideos([v1, v3, v2], 'shortest');
+    expect(result).toEqual([v2, v1, v3]);
+  });
+
+  it('should sort by views descending', () => {
+    const v1 = createMockVideo({ views: 500 });
+    const v2 = createMockVideo({ views: 10 });
+    const v3 = createMockVideo({ views: 1000 });
+
+    const result = sortVideos([v1, v2, v3], 'views');
+    expect(result).toEqual([v3, v1, v2]);
+  });
+
+  it('should sort by viewsAsc ascending', () => {
+    const v1 = createMockVideo({ views: 500 });
+    const v2 = createMockVideo({ views: 10 });
+    const v3 = createMockVideo({ views: 1000 });
+
+    const result = sortVideos([v1, v3, v2], 'viewsAsc');
+    expect(result).toEqual([v2, v1, v3]);
+  });
+
+  it('should sort by relevance descending with views fallback', () => {
+    const v1 = createMockVideo({ relevance: 10, views: 100 });
+    const v2 = createMockVideo({ relevance: 5, views: 500 });
+    const v3 = createMockVideo({ relevance: 5, views: 1000 }); // same relevance, more views
+
+    const result = sortVideos([v2, v1, v3], 'relevance');
+    expect(result).toEqual([v1, v3, v2]);
+  });
+
+  it('should default to newest sort when passing invalid sortMode', () => {
+    const v1 = createMockVideo({ date: '2 days ago', views: 100 });
+    const v2 = createMockVideo({ date: '5 days ago', views: 500 });
+    const v3 = createMockVideo({ date: '5 days ago', views: 1000 });
+
+    // Should behave exactly like 'newest'
+    const result = sortVideos([v2, v1, v3], 'invalid_mode' as any);
+    expect(result).toEqual([v1, v3, v2]);
   });
 });
