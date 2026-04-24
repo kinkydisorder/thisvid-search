@@ -19,17 +19,6 @@ type FilterVideosOptions = {
   diminishingTags?: string[];
 };
 
-// type VideoUrl = {
-//   title: string;
-//   url: string;
-//   isPrivate: boolean;
-//   duration: string;
-//   avatar: string;
-//   views: number;
-//   date: string;
-//   relevance: number;
-// };
-
 export const getVideos = async ({
   url,
   page,
