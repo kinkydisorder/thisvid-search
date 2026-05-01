@@ -435,7 +435,7 @@ const SimpleSearch = () => {
             onMouseEnter={() => {
                 setIsHovering(true);
                 if(videoRef.current) {
-                    videoRef.current.play().catch(e => console.log('Autoplay prevented', e));
+                    videoRef.current.play().catch(() => {});
                 }
             }}
             onMouseLeave={() => {
@@ -834,16 +834,24 @@ const SimpleSearch = () => {
                   let allRecs = [];
                   const videosToScan = selectedVideos.slice(0, 3);
 
-                  for (let v of videosToScan) {
+                  const promises = videosToScan.map(async (v) => {
                     try {
                       const res = await fetch(`/.netlify/functions/videoDetails?url=${encodeURIComponent(v.url)}`);
                       const data = await res.json();
                       if (data.success && data.recommendedVideos) {
-                        trackDiscoveredVideos(data.recommendedVideos);
-                        allRecs = [...allRecs, ...data.recommendedVideos];
+                        return data.recommendedVideos;
                       }
                     } catch(e) {}
-                  }
+                    return null;
+                  });
+
+                  const results = await Promise.all(promises);
+                  results.forEach(recs => {
+                    if (recs) {
+                      trackDiscoveredVideos(recs);
+                      allRecs = [...allRecs, ...recs];
+                    }
+                  });
 
                   // 4. Apply AI heuristics to filter the raw recommendations
                   // - Must not be private
@@ -859,7 +867,12 @@ const SimpleSearch = () => {
                   });
 
                   // Remove duplicates
-                  const uniqueRecs = filteredRecs.filter((v, i, a) => a.findIndex(t => (t.url === v.url)) === i);
+                  const seenUrls = new Set();
+                  const uniqueRecs = filteredRecs.filter((v) => {
+                    if (seenUrls.has(v.url)) return false;
+                    seenUrls.add(v.url);
+                    return true;
+                  });
 
                   setSmartRecommendations(uniqueRecs);
 

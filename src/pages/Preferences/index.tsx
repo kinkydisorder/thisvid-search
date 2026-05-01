@@ -163,9 +163,12 @@ const Preferences = () => {
       );
     }
 
-    const videos = (await Promise.all(promises)).flat().filter(
-      (value: any, index: number, self: any[]) => index === self.findIndex((v: any) => v.url === value.url),
-    );
+    const seenUrls = new Set();
+    const videos = (await Promise.all(promises)).flat().filter((v: any) => {
+      if (seenUrls.has(v.url)) return false;
+      seenUrls.add(v.url);
+      return true;
+    });
 
     const videoUrls = videos.map((v) => v.url);
 

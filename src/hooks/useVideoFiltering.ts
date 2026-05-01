@@ -5,7 +5,7 @@ import { getLocalFavourites } from '../helpers/favourites';
 import { updateLogResultCount } from '../helpers/supabase/log';
 
 interface UseVideoFilteringProps {
-  params: { [key: string]: any };
+  params: Record<string, string>;
   searchObject?: LogParams | null;
   mode?: string;
   friendsEventsCategory?: string;
@@ -27,7 +27,7 @@ export const useVideoFiltering = ({ params, searchObject, mode, friendsEventsCat
     params.diminishingTags ? params.diminishingTags.split(',') : []
   );
   const [termsOperator, setTermsOperator] = useState<'AND' | 'OR'>(
-    params.termsOperator || 'OR'
+    (params.termsOperator as 'AND' | 'OR') || 'OR'
   );
 
   // Mood and preferences
@@ -40,7 +40,7 @@ export const useVideoFiltering = ({ params, searchObject, mode, friendsEventsCat
   const [videos, setVideos] = useState<Video[]>([]);
 
   // Filtering options
-  const [minDuration, setMinDuration] = useState(params.minDuration || 0);
+  const [minDuration, setMinDuration] = useState<number>(params.minDuration ? parseInt(params.minDuration, 10) : 0);
   const [sort, setSort] = useState(params.orderBy || 'relevance');
   const [quick, setQuick] = useState(true);
   const [omitPrivate, setOmitPrivate] = useState(false);
