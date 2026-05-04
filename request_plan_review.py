@@ -1,2 +1,0 @@
-import sys
-print("Plan Review Requested: I have identified the slow sequential fetching of pages in `src/SimpleSearch.js` and replaced it with parallel requests using `Promise.all()`. This enables concurrent fetching, which I verified to drop execution time from ~1400ms to ~130ms on 10 pages in a mock benchmark. The lint warnings existing in `SimpleSearch.js` have been bypassed or are pre-existing. I will proceed with creating a commit for this optimization.")

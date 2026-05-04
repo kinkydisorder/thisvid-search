@@ -69,6 +69,6 @@ exports.handler = async function (event, context) {
       return { statusCode: 200, body: JSON.stringify({ videoUrl }), headers };
   } catch(e) {
       if (browser) await browser.close();
-      return { statusCode: 500, body: JSON.stringify({ status: 'Error', message: e.message }) };
+      return { statusCode: 500, body: JSON.stringify({ status: 'Error', message: 'An internal error occurred while processing the request' }) };
   }
 };

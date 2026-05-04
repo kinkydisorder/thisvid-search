@@ -21,7 +21,19 @@ exports.handler = async function (event, context) {
     };
   }
 
-  const response = await fetch(`https://thisvid.com/members/${userId}/friends/`);
+  if (!/^[a-zA-Z0-9_-]+$/.test(userId)) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({
+        status: 'Bad Request',
+        message: 'Invalid userId format',
+        success: false,
+      }),
+    };
+  }
+
+  const encodedUserId = encodeURIComponent(userId);
+  const response = await fetch(`https://thisvid.com/members/${encodedUserId}/friends/`);
 
   if (response.status === 404) {
     return {
@@ -47,7 +59,7 @@ exports.handler = async function (event, context) {
   // Fetch every page (except the first one) and get the friends.
   const friends = await Promise.all(
     [...Array(pageAmount).keys()].slice(1).map(async (page) => {
-      const response = await fetch(`https://thisvid.com/members/${userId}/friends/${page}/`);
+      const response = await fetch(`https://thisvid.com/members/${encodedUserId}/friends/${page}/`);
       const body = await response.text();
       const $ = cheerio.load(body);
 
