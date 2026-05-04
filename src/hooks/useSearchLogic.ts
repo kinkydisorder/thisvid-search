@@ -310,9 +310,12 @@ export const useSearchLogic = ({
       }
 
       // Extract videos
-      const videos = results.flatMap(r => r.videos).filter(
-        (value: Video, index: number, self: Video[]) => index === self.findIndex((v: Video) => v.url === value.url),
-      );
+      const seenUrls = new Set();
+      const videos = results.flatMap(r => r.videos).filter((v: Video) => {
+        if (seenUrls.has(v.url)) return false;
+        seenUrls.add(v.url);
+        return true;
+      });
 
       const newRawVideos = preserveResults
         ? [...rawVideos, ...videos] as Video[]
@@ -322,8 +325,8 @@ export const useSearchLogic = ({
       setFinished(true);
       executeScroll();
       logSearch();
-    } catch (error) {
-      console.log('Error: ' + error);
+    } catch {
+      // Silently handle search execution errors
     }
 
     setLoading(false);
