@@ -325,8 +325,8 @@ export const useSearchLogic = ({
       setFinished(true);
       executeScroll();
       logSearch();
-    } catch (error) {
-      console.error('Error:', error);
+    } catch {
+      // Silently handle search execution errors
     }
 
     setLoading(false);
