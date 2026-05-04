@@ -128,10 +128,27 @@ export async function analyseFavouritesListingPage(
     }),
   );
 
-  for (const row of rows) {
-    if (!row) continue;
-    const avatar = await getAvatarForUploader(users, row.video.username, row.memberId);
-    mergeVideo(users, row.video, avatar);
+  const avatarPromises: Record<string, Promise<string>> = {};
+
+  const results = await Promise.all(
+    rows.map(async (row) => {
+      if (!row) return null;
+      const { username } = row.video;
+
+      // Local cache within this batch to avoid multiple requests for the same user
+      if (!avatarPromises[username]) {
+        avatarPromises[username] = getAvatarForUploader(users, username, row.memberId);
+      }
+
+      const avatar = await avatarPromises[username];
+      return { row, avatar };
+    }),
+  );
+
+  for (const res of results) {
+    if (res) {
+      mergeVideo(users, res.row.video, res.avatar);
+    }
   }
 }
 

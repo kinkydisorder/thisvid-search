@@ -10,9 +10,6 @@ const SimpleSearch = () => {
   const [progressMsg, setProgressMsg] = useState('');
   const [error, setError] = useState(null);
 
-  // Custom Toast Notification
-  const [toastMsg, setToastMsg] = useState('');
-
   // Filters
   const [hidePrivate, setHidePrivate] = useState(false);
   const [onlyHD, setOnlyHD] = useState(false);
@@ -74,7 +71,6 @@ const SimpleSearch = () => {
     document.body.appendChild(downloadAnchorNode);
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
-    showToast('✅ Galería exportada como JSON');
   };
 
   const exportToCSV = () => {
@@ -96,13 +92,6 @@ const SimpleSearch = () => {
     document.body.appendChild(downloadAnchorNode);
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
-    showToast('✅ Galería exportada como CSV');
-  };
-
-  // Show Toast Helper
-  const showToast = (msg) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(''), 4000);
   };
 
   // Load selected videos from localStorage on mount
@@ -280,11 +269,9 @@ const SimpleSearch = () => {
           setGlobalTags(prev => [...prev, ...data.tags]);
         }
       } else {
-        showToast("⚠️ No se pudieron cargar las recomendaciones de este video.");
         setExpandedVideo(null);
       }
     } catch (e) {
-      showToast("⚠️ Error al cargar la página del video.");
       setExpandedVideo(null);
     } finally {
       setExpandedLoading(false);
@@ -435,7 +422,7 @@ const SimpleSearch = () => {
             onMouseEnter={() => {
                 setIsHovering(true);
                 if(videoRef.current) {
-                    videoRef.current.play().catch(e => console.log('Autoplay prevented', e));
+                    videoRef.current.play().catch(() => {});
                 }
             }}
             onMouseLeave={() => {
@@ -769,7 +756,6 @@ const SimpleSearch = () => {
               <button
                 onClick={() => {
                   if (selectedVideos.length < 2) {
-                    showToast('⚠️ Necesitas al menos 2 videos en tu galería para compilar.');
                     return;
                   }
                   setIsCompiling(true);
@@ -780,7 +766,6 @@ const SimpleSearch = () => {
                         clearInterval(interval);
                         setTimeout(() => {
                           setIsCompiling(false);
-                          showToast('✅ ¡Tu compilación (Beta) ha sido generada y exportada!');
                         }, 500);
                         return 100;
                       }
@@ -834,16 +819,24 @@ const SimpleSearch = () => {
                   let allRecs = [];
                   const videosToScan = selectedVideos.slice(0, 3);
 
-                  for (let v of videosToScan) {
+                  const promises = videosToScan.map(async (v) => {
                     try {
                       const res = await fetch(`/.netlify/functions/videoDetails?url=${encodeURIComponent(v.url)}`);
                       const data = await res.json();
                       if (data.success && data.recommendedVideos) {
-                        trackDiscoveredVideos(data.recommendedVideos);
-                        allRecs = [...allRecs, ...data.recommendedVideos];
+                        return data.recommendedVideos;
                       }
                     } catch(e) {}
-                  }
+                    return null;
+                  });
+
+                  const results = await Promise.all(promises);
+                  results.forEach(recs => {
+                    if (recs) {
+                      trackDiscoveredVideos(recs);
+                      allRecs = [...allRecs, ...recs];
+                    }
+                  });
 
                   // 4. Apply AI heuristics to filter the raw recommendations
                   // - Must not be private
@@ -859,7 +852,12 @@ const SimpleSearch = () => {
                   });
 
                   // Remove duplicates
-                  const uniqueRecs = filteredRecs.filter((v, i, a) => a.findIndex(t => (t.url === v.url)) === i);
+                  const seenUrls = new Set();
+                  const uniqueRecs = filteredRecs.filter((v) => {
+                    if (seenUrls.has(v.url)) return false;
+                    seenUrls.add(v.url);
+                    return true;
+                  });
 
                   setSmartRecommendations(uniqueRecs);
 
