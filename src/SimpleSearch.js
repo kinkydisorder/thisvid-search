@@ -10,9 +10,6 @@ const SimpleSearch = () => {
   const [progressMsg, setProgressMsg] = useState('');
   const [error, setError] = useState(null);
 
-  // Custom Toast Notification
-  const [toastMsg, setToastMsg] = useState('');
-
   // Filters
   const [hidePrivate, setHidePrivate] = useState(false);
   const [onlyHD, setOnlyHD] = useState(false);
@@ -74,7 +71,6 @@ const SimpleSearch = () => {
     document.body.appendChild(downloadAnchorNode);
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
-    showToast('✅ Galería exportada como JSON');
   };
 
   const exportToCSV = () => {
@@ -96,13 +92,6 @@ const SimpleSearch = () => {
     document.body.appendChild(downloadAnchorNode);
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
-    showToast('✅ Galería exportada como CSV');
-  };
-
-  // Show Toast Helper
-  const showToast = (msg) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(''), 4000);
   };
 
   // Load selected videos from localStorage on mount
@@ -280,11 +269,9 @@ const SimpleSearch = () => {
           setGlobalTags(prev => [...prev, ...data.tags]);
         }
       } else {
-        showToast("⚠️ No se pudieron cargar las recomendaciones de este video.");
         setExpandedVideo(null);
       }
     } catch (e) {
-      showToast("⚠️ Error al cargar la página del video.");
       setExpandedVideo(null);
     } finally {
       setExpandedLoading(false);
@@ -769,7 +756,6 @@ const SimpleSearch = () => {
               <button
                 onClick={() => {
                   if (selectedVideos.length < 2) {
-                    showToast('⚠️ Necesitas al menos 2 videos en tu galería para compilar.');
                     return;
                   }
                   setIsCompiling(true);
@@ -780,7 +766,6 @@ const SimpleSearch = () => {
                         clearInterval(interval);
                         setTimeout(() => {
                           setIsCompiling(false);
-                          showToast('✅ ¡Tu compilación (Beta) ha sido generada y exportada!');
                         }, 500);
                         return 100;
                       }
