@@ -290,7 +290,7 @@ export const useSearchLogic = ({
           return {
             videos: s,
             page: currentPage,
-            hasError: s && (s as any).hasOwnProperty('error') && (s as any).error === 404
+            hasError: s && Object.prototype.hasOwnProperty.call(s, 'error') && (s as unknown as { error: number }).error === 404
           };
         }),
       );
