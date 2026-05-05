@@ -144,7 +144,7 @@ const SimpleSearch = () => {
         const response = await fetch(url);
 
         if (!response.ok) {
-          console.warn(`Error on page ${i}`);
+          setError(`Error fetching page ${i}`);
           break;
         }
 
