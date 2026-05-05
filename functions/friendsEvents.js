@@ -42,12 +42,19 @@ exports.handler = async function (event, context) {
     };
   }
 
-  if (!username || !password) {
+  if (
+    typeof username !== 'string' ||
+    typeof password !== 'string' ||
+    username.trim().length === 0 ||
+    password.trim().length === 0 ||
+    username.length > 100 ||
+    password.length > 100
+  ) {
     return {
       statusCode: 400,
       body: JSON.stringify({
         status: 'Bad Request',
-        message: 'Missing username or password in request body',
+        message: 'Invalid username or password format. They must be strings between 1 and 100 characters.',
         success: false,
       }),
       headers,

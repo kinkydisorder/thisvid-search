@@ -290,7 +290,7 @@ export const useSearchLogic = ({
           return {
             videos: s,
             page: currentPage,
-            hasError: s && (s as any).hasOwnProperty('error') && (s as any).error === 404
+            hasError: s && Object.prototype.hasOwnProperty.call(s, 'error') && (s as unknown as { error: number }).error === 404
           };
         }),
       );
@@ -325,8 +325,8 @@ export const useSearchLogic = ({
       setFinished(true);
       executeScroll();
       logSearch();
-    } catch (error) {
-      console.error('Error:', error);
+    } catch {
+      // Silently handle search execution errors
     }
 
     setLoading(false);
